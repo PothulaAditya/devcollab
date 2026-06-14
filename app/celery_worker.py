@@ -3,13 +3,27 @@ import smtplib
 from email.message import EmailMessage
 from.config.config import setting
 
-
+"""
 import os
 
 redis_host = os.getenv("REDIS_HOST","localhost")
 
 
 celery_app = Celery("devcollab",broker=f"redis://{redis_host}:6379/0",backend=f"redis://{redis_host}:6379/0")
+
+"""
+
+
+import os
+from celery import Celery
+
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+celery_app = Celery(
+    "devcollab",
+    broker=redis_url,
+    backend=redis_url,
+)
 
 
 @celery_app.task
