@@ -1,7 +1,3 @@
-from celery import Celery
-import smtplib
-from email.message import EmailMessage
-from.config.config import setting
 
 """
 import os
@@ -25,7 +21,7 @@ celery_app = Celery(
     backend=redis_url,
 )
 
-
+"""
 @celery_app.task
 def send_email(to_email,subject,body):
     msg = EmailMessage()
@@ -39,3 +35,19 @@ def send_email(to_email,subject,body):
         smtp.send_message(msg)
 
     return f"Email sent to {to_email}"
+
+"""
+
+import resend
+import os
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+
+@celery_app.task
+def send_email(to_email, subject, body):
+    resend.Emails.send({
+        "from": "noreply@adityapothula.dev",
+        "to": to_email,
+        "subject": subject,
+        "html": body,
+    })
