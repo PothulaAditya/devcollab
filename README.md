@@ -117,6 +117,7 @@ DevCollab is an actively evolving project. Phase 1 (a complete, deployed backend
 - **Formal role-permission system** — a centralized role → permission map to replace per-route permission checks as the role model grows.
 - **Deeper admin tooling** — audit logs, analytics, and more granular moderation.
 - **WebSocket scaling** — Redis Pub/Sub across multiple server instances to scale real-time chat horizontally.
+- **Resume / file uploads** — let applicants attach a resume or portfolio file when applying to a project, instead of only text data (more realistic application flow).
 - **Frontend** — a web client consuming this API.
 
 ## Known Limitations
