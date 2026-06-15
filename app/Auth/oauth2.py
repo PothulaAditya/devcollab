@@ -12,7 +12,7 @@ from ..schemas import schema_token
 from ..models import models
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/")
 
 
 SECRET_KEY=setting.secret_key
