@@ -91,6 +91,26 @@ RESEND_API_KEY=your_resend_api_key
 
 ---
 
+## User Flow
+
+DevCollab is an API, so the easiest way to explore it is the interactive docs at [`/docs`](https://devcollab.adityapothula.dev/docs). Here is the typical end-to-end flow, in order:
+
+1. **Register** — create an account via `POST /user`. A verification email is sent.
+2. **Verify email** — open the link in the email to activate the account.
+3. **Log in** — `POST /login` returns an access token and a refresh token. In the Swagger docs, click **Authorize** and log in so subsequent requests are authenticated.
+4. **Create a project** — `POST /project` to start a project you own (e.g. a web app needing collaborators).
+5. **Others apply** — a different user applies to join your project via the applications endpoint.
+6. **Accept applicants** — as the owner, accept an application. The applicant is automatically added as a member and receives an acceptance email.
+7. **Manage the team** — view members, promote a member to admin, or remove someone.
+8. **Create and assign tasks** — break the project into tasks and assign them to members. The assignee can update the task's status; owners and admins can edit everything.
+9. **Comment on tasks** — members discuss work through task-scoped comments.
+10. **Chat in real time** — members connect to the project's WebSocket chat room and message each other live; messages are persisted and history can be fetched.
+11. **Admin oversight** — platform admins can view all users and projects, see statistics, and ban or promote users.
+
+To try the flow yourself, you will need two accounts (one project owner and one applicant) — Gmail's `+alias` trick (e.g. `you+owner@gmail.com`, `you+member@gmail.com`) lets you create multiple accounts from a single inbox.
+
+> Note: A web frontend is planned (see Roadmap) to make this flow usable without the API docs. For now, `/docs` is the interactive interface.
+
 ## API Overview
 
 All endpoints are documented and testable via the interactive Swagger UI at `/docs`. Major route groups:
