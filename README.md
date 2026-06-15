@@ -107,7 +107,7 @@ DevCollab is an API, so the easiest way to explore it is the interactive docs at
 10. **Chat in real time** — members connect to the project's WebSocket chat room and message each other live; messages are persisted and history can be fetched.
 11. **Admin oversight** — platform admins can view all users and projects, see statistics, and ban or promote users.
 
-To try the flow yourself, you will need two accounts (one project owner and one applicant) — Gmail's `+alias` trick (e.g. `you+owner@gmail.com`, `you+member@gmail.com`) lets you create multiple accounts from a single inbox.
+To try the flow yourself, you will need two accounts (one project owner and one applicant) 
 
 > Note: A web frontend is planned (see Roadmap) to make this flow usable without the API docs. For now, `/docs` is the interactive interface.
 
