@@ -46,7 +46,7 @@ resend.api_key = os.getenv("RESEND_API_KEY")
 @celery_app.task
 def send_email(to_email, subject, body):
     resend.Emails.send({
-        "from": "noreply@adityapothula.dev",
+        "from": "DevCollab <noreply@adityapothula.dev>",
         "to": to_email,
         "subject": subject,
         "html": body,
