@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import auth, user, project, application, projectmember, task, comment, chat
+from .routers import auth, user, project, application, projectmember, task, comment, chat,admin
 from .celery_worker import send_email
 from fastapi.middleware.cors import CORSMiddleware
 
