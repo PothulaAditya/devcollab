@@ -72,3 +72,4 @@ watchfiles==1.2.0
 wcwidth==0.8.1
 websockets==16.0
 resend==2.30.1
+slowapi==0.1.9

@@ -1,47 +1,15 @@
-
-"""
-import os
-
-redis_host = os.getenv("REDIS_HOST","localhost")
-
-
-celery_app = Celery("devcollab",broker=f"redis://{redis_host}:6379/0",backend=f"redis://{redis_host}:6379/0")
-
-"""
-
-
-import os
+import resend
 from celery import Celery
-
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+from .config.config import setting
 
 celery_app = Celery(
     "devcollab",
-    broker=redis_url,
-    backend=redis_url,
+    broker=setting.redis_url,
+    backend=setting.redis_url,
 )
 
-"""
-@celery_app.task
-def send_email(to_email,subject,body):
-    msg = EmailMessage()
-    msg["From"] = setting.email_address
-    msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.set_content(body)
+resend.api_key = setting.resend_api_key
 
-    with smtplib.SMTP_SSL("smtp.gmail.com",465) as smtp:
-        smtp.login(setting.email_address,setting.email_password)
-        smtp.send_message(msg)
-
-    return f"Email sent to {to_email}"
-
-"""
-
-import resend
-import os
-
-resend.api_key = os.getenv("RESEND_API_KEY")
 
 @celery_app.task
 def send_email(to_email, subject, body):

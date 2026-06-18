@@ -1,12 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Literal
+from datetime import datetime
+
 
 class ProjectMemberResponse(BaseModel):
-    user_id:int
-    role:str
+    id: int
+    user_id: int
+    project_id: int
+    role: str
+    joined_at: datetime
 
-    class Config:
-        from_attribute=True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ProjectMemberUpdate(BaseModel):
-    role:Literal["member", "admin"]
+    role: Literal["member", "admin"]

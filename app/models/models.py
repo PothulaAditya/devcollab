@@ -1,5 +1,5 @@
 from ..database.database import Base
-from sqlalchemy import Column,Integer,BOOLEAN,String,ForeignKey,UniqueConstraint
+from sqlalchemy import Column, Integer, BOOLEAN, String, ForeignKey, UniqueConstraint, func
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
@@ -12,10 +12,10 @@ class User(Base):
     password = Column(String, nullable=False)
     username = Column(String, nullable=False, unique=True, index=True)
     role = Column(String, nullable=False, server_default='Member')
-    is_verified = Column(BOOLEAN, nullable=False, server_default='false')
-    is_active = Column(BOOLEAN, nullable=False, server_default='true')    
-    is_banned = Column(BOOLEAN, nullable=False, server_default='false')
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    is_verified = Column(BOOLEAN, nullable=False, server_default='0')
+    is_active = Column(BOOLEAN, nullable=False, server_default='1')
+    is_banned = Column(BOOLEAN, nullable=False, server_default='0')
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
     applications = relationship("Application", back_populates="user")
     memberships = relationship("ProjectMember", back_populates="user")
@@ -27,81 +27,80 @@ class User(Base):
 
 class Project(Base):
     __tablename__ = "projects"
-    id = Column(Integer,primary_key=True,nullable=False)
-    title = Column(String,nullable=False)
-    description = Column(String,nullable=False)
-    tech_stack = Column(String,nullable=False)
-    required_roles = Column(String,nullable=False)
-    max_members = Column(Integer,server_default=text('5'))
-    status = Column(String,nullable=False,server_default="open")
-    owner_id = Column(Integer,ForeignKey("users.id",ondelete="Cascade"),nullable = False)
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text('now()'))
-    applications = relationship("Application",back_populates="project")
-    members = relationship("ProjectMember",back_populates="project")
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    tech_stack = Column(String, nullable=False)
+    required_roles = Column(String, nullable=False)
+    max_members = Column(Integer, server_default=text('5'))
+    status = Column(String, nullable=False, server_default="open")
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="Cascade"), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=True, onupdate=func.now())
+
+    applications = relationship("Application", back_populates="project")
+    members = relationship("ProjectMember", back_populates="project")
     tasks = relationship("Task", back_populates="project")
     messages = relationship("Message", back_populates="project")
 
 
 class Application(Base):
     __tablename__ = "applications"
-    id = Column(Integer,primary_key=True,nullable=False)
-    project_id = Column(Integer,ForeignKey("projects.id",ondelete="Cascade"),nullable = False)
-    user_id = Column(Integer,ForeignKey("users.id",ondelete="Cascade"),nullable = False)
-    message = Column(String,nullable = False)
-    status = Column(String , nullable = False,server_default="pending")
-    created_at = Column(TIMESTAMP(timezone=True),nullable =False,server_default=text('now()'))
+    id = Column(Integer, primary_key=True, nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="Cascade"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="Cascade"), nullable=False)
+    message = Column(String, nullable=False)
+    status = Column(String, nullable=False, server_default="pending")
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
     project = relationship("Project", back_populates="applications")
     user = relationship("User", back_populates="applications")
 
 
-
 class ProjectMember(Base):
     __tablename__ = "projectmembers"
+    __table_args__ = (UniqueConstraint("project_id", "user_id"),)
 
-    __table_args__ = ( UniqueConstraint("project_id","user_id"),)
+    id = Column(Integer, primary_key=True, nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="Cascade"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="Cascade"), nullable=False)
+    role = Column(String, nullable=False, server_default="member")
+    joined_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
-
-
-    id = Column(Integer,primary_key=True,nullable=False)
-    project_id = Column(Integer,ForeignKey("projects.id",ondelete="Cascade"),nullable = False)
-    user_id = Column(Integer,ForeignKey("users.id",ondelete="Cascade"),nullable = False)
-    role = Column(String,nullable = False,server_default="member")
-    joined_at = Column(TIMESTAMP(timezone=True),nullable = False,server_default=text('now()'))
     project = relationship("Project", back_populates="members")
     user = relationship("User", back_populates="memberships")
 
 
 class Task(Base):
-    __tablename__ =  "tasks"
+    __tablename__ = "tasks"
 
-    id=Column(Integer,primary_key=True,nullable = False)
-    project_id = Column(Integer,ForeignKey("projects.id",ondelete="Cascade"),nullable = False)
-    title = Column(String,nullable=False)
-    description = Column(String,nullable=True)
-    status = Column(String , nullable = False,server_default="todo")
+    id = Column(Integer, primary_key=True, nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="Cascade"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    status = Column(String, nullable=False, server_default="todo")
     assigned_to = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_by  = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=True, onupdate=func.now())
 
-    project  = relationship("Project", back_populates="tasks")
+    project = relationship("Project", back_populates="tasks")
     assignee = relationship("User", foreign_keys=[assigned_to], back_populates="assigned_tasks")
-    creator  = relationship("User", foreign_keys=[created_by],  back_populates="created_tasks")
-    comments = relationship("Comment",back_populates="task")
+    creator = relationship("User", foreign_keys=[created_by], back_populates="created_tasks")
+    comments = relationship("Comment", back_populates="task")
+
 
 class Comment(Base):
     __tablename__ = "comments"
 
-    id=Column(Integer,primary_key=True,nullable = False)
-    task_id = Column(Integer,ForeignKey("tasks.id",ondelete = "Cascade"),nullable = False)
-    user_id = Column(Integer,ForeignKey("users.id",ondelete = "Cascade"),nullable = False)
-    content = Column(String,nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True),nullable =False,server_default= text("now()"))
+    id = Column(Integer, primary_key=True, nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="Cascade"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="Cascade"), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=True, onupdate=func.now())
 
-    user = relationship("User",back_populates="comments")
-    task = relationship("Task",back_populates="comments")
-
-
-
+    user = relationship("User", back_populates="comments")
+    task = relationship("Task", back_populates="comments")
 
 
 class Message(Base):
@@ -111,12 +110,10 @@ class Message(Base):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("now()"))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
     project = relationship("Project", back_populates="messages")
     user = relationship("User", back_populates="messages")
-
-
 
 
 class RefreshToken(Base):
@@ -126,6 +123,6 @@ class RefreshToken(Base):
     token = Column(String, nullable=False, unique=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     expires_at = Column(TIMESTAMP(timezone=True), nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("now()"))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
     user = relationship("User")

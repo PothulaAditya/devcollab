@@ -1,105 +1,122 @@
-from fastapi import APIRouter,status,HTTPException,Depends,Response
+import logging
+from fastapi import APIRouter, status, HTTPException, Depends, Response
+from sqlalchemy.orm import Session
+from typing import List
+
 from ..database.database import get_db
 from ..Auth.oauth2 import get_current_user
-from sqlalchemy.orm import Session
-from ..schemas import schema_application,schemas_projects
+from ..schemas import schema_application
 from ..models import models
-from typing import List
 from ..celery_worker import send_email
-router = APIRouter(prefix="/project",tags=["Applications"])
+
+logger = logging.getLogger("devcollab.application")
+
+router = APIRouter(prefix="/project", tags=["Applications"])
 
 
-@router.post("/{project_id}/application",status_code=status.HTTP_201_CREATED,response_model=schema_application.ApplicationResponse)
-def apply(project_id:int ,message :schema_application.ApplicationCreate,db :Session =Depends(get_db),curr_user :int =Depends(get_current_user)):
+@router.post("/{project_id}/application", status_code=status.HTTP_201_CREATED, response_model=schema_application.ApplicationResponse)
+def apply(project_id: int, message: schema_application.ApplicationCreate, db: Session = Depends(get_db), curr_user: int = Depends(get_current_user)):
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {id} not available")
-    
-    application = db.query(models.Application).filter(models.Application.project_id == project_id , models.Application.user_id == curr_user.id).first()
-    if application :
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail = f"Already applied to project with id {project_id}")
-    # Add this after the application check
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project with id {project_id} not found")
+
+    if project.owner_id == curr_user.id:
+        raise HTTPException(status_code=403, detail="Owner cannot apply to own project")
+
+    application = db.query(models.Application).filter(
+        models.Application.project_id == project_id,
+        models.Application.user_id == curr_user.id,
+    ).first()
+    if application:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Already applied to project with id {project_id}")
+
     member = db.query(models.ProjectMember).filter(
         models.ProjectMember.project_id == project_id,
-        models.ProjectMember.user_id == curr_user.id
+        models.ProjectMember.user_id == curr_user.id,
     ).first()
     if member:
-        raise HTTPException(status_code=403, detail="Already a member of this project")
-    
-    if project.owner_id == curr_user.id:
-        raise HTTPException(403, "Owner cannot apply to own project")
-    apply = models.Application(**message.dict(),
-    project_id=project_id,
-    user_id=curr_user.id)
+        raise HTTPException(status_code=409, detail="Already a member of this project")
 
-    db.add(apply)
-    
+    new_application = models.Application(
+        **message.model_dump(),
+        project_id=project_id,
+        user_id=curr_user.id,
+    )
+    db.add(new_application)
     db.commit()
-    db.refresh(apply)
+    db.refresh(new_application)
 
-    return apply
+    return new_application
 
 
-@router.get("/{project_id}/applications",response_model=List[schema_application.ApplicationResponse])
-def get_applications(project_id:int,db :Session =Depends(get_db),curr_user :int =Depends(get_current_user)):
+@router.get("/{project_id}/applications", response_model=List[schema_application.ApplicationResponse])
+def get_applications(project_id: int, db: Session = Depends(get_db), curr_user: int = Depends(get_current_user)):
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {id} not available")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project with id {project_id} not found")
     if project.owner_id != curr_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="only owner can access the application")
-    
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the project owner can view applications")
+
     return project.applications
 
 
-@router.put("/application/{application_id}",response_model=schema_application.ApplicationResponse)
-def update_application(status_value :schema_application.ApplicationUpdate,application_id:int,db:Session=Depends(get_db),curr_user:int =Depends(get_current_user)):
+@router.put("/application/{application_id}", response_model=schema_application.ApplicationResponse)
+def update_application(status_value: schema_application.ApplicationUpdate, application_id: int, db: Session = Depends(get_db), curr_user: int = Depends(get_current_user)):
     application_query = db.query(models.Application).filter(models.Application.id == application_id)
     application = application_query.first()
-    if not application :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {id} not found ")
-    
+
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Application with id {application_id} not found")
+
     project = db.query(models.Project).filter(models.Project.id == application.project_id).first()
 
     if project.owner_id != curr_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="only owner can access the application")
-    # Add this before update
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the project owner can manage applications")
+
     if status_value.status.lower() == "accepted":
+        # Enforce max_members limit
+        current_member_count = db.query(models.ProjectMember).filter(
+            models.ProjectMember.project_id == application.project_id
+        ).count()
+        if project.max_members and current_member_count >= project.max_members:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Project has reached maximum member limit of {project.max_members}",
+            )
+
         member = db.query(models.ProjectMember).filter(
             models.ProjectMember.project_id == application.project_id,
-            models.ProjectMember.user_id == application.user_id
+            models.ProjectMember.user_id == application.user_id,
         ).first()
         if not member:
             new_member = models.ProjectMember(
                 project_id=application.project_id,
-                user_id=application.user_id
+                user_id=application.user_id,
             )
             db.add(new_member)
+
         user = db.query(models.User).filter(models.User.id == application.user_id).first()
-        send_email.delay(user.email,"Application Accepted","Your Application has been accepted")
-    application_query.update(status_value.dict(),synchronize_session=False)
+        send_email.delay(user.email, "Application Accepted", "Your application has been accepted! You are now a member of the project.")
+        logger.info(f"Application {application_id} accepted, user {application.user_id} added to project {application.project_id}")
+
+    application_query.update(status_value.model_dump(), synchronize_session=False)
     db.commit()
     return application_query.first()
 
 
-
-
-@router.delete("/application/{application_id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_application(application_id:int,db:Session=Depends(get_db),curr_user:int =Depends(get_current_user)):
+@router.delete("/application/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_application(application_id: int, db: Session = Depends(get_db), curr_user: int = Depends(get_current_user)):
     application_query = db.query(models.Application).filter(models.Application.id == application_id)
     application = application_query.first()
-    if not application :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {id} not found ")
-    
-    project = db.query(models.Project).filter(models.Project.id == application.project_id).first()
 
-    if application.user_id != curr_user.id: 
-        raise HTTPException(status_code=403, detail="Cannot delete others application")
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Application with id {application_id} not found")
+
+    if application.user_id != curr_user.id:
+        raise HTTPException(status_code=403, detail="Cannot delete another user's application")
 
     application_query.delete(synchronize_session=False)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-        
-
-    
