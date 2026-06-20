@@ -6,8 +6,7 @@ from sqlalchemy.orm import Session
 from ..utils.utils import hash_password
 from ..Auth.oauth2 import get_current_user,create_verification_token,verify_token,reset_token
 from ..celery_worker import send_email
-from pydantic import EmailStr
-from ..Auth.oauth2 import SECRET_KEY, ALGORITHM
+from config.config import setting
 from ..utils.utils import verify_password
 router = APIRouter(
     prefix="/user"
@@ -28,7 +27,7 @@ def create_user(data:schemas_user.UserRegister,db : Session=Depends(get_db)):
     db.refresh(new_user)
 
     token = create_verification_token(new_user.id)
-    verification_link = f"http://127.0.0.1:8000/user/verify?token={token}"
+    verification_link = f"{setting.base_url}/user/verify?token={token}"
 
     send_email.delay(new_user.email,"Verify your devcollab account",f"Welcome! Click this link to verify your account:\n\n{verification_link}")
     return new_user
@@ -64,8 +63,8 @@ def forget_password(data:schemas_user.ForgotPassword,db :Session = Depends(get_d
     user = db.query(models.User).filter(models.User.email == data.email).first()
     if user:
         token = reset_token(user.id)
-        reset_password_link = f"http://127.0.0.1:8000/user/reset-password?token={token}"
-        send_email(data.email,"Password Reset Link",reset_password_link)
+        reset_password_link = f"{setting.base_url}/user/resetpassword?token={token}"
+        send_email.delay(data.email,"Password Reset Link",reset_password_link)
 
     return {"msg":"if mail exists ,password has been sent to that mail"}
 

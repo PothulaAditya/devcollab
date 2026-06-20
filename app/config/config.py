@@ -11,6 +11,7 @@ class Setting(BaseSettings):
     algorithm:str
     access_token_expire_minutes:int
     resend_api_key:str
+    base_url:str
     class Config:
         env_file = ".env"
 

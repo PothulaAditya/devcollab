@@ -72,7 +72,7 @@ def update_application(id:int,project : schemas_projects.ProjectUpdate,db:Sessio
     project_query.update(project.dict(),synchronize_session=False)
     db.commit()
 
-    redis_client.delete(f"project_d :{id}")
+    redis_client.delete(f"project_id :{id}")
 
     return project_query.first()
     

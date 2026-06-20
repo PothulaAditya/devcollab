@@ -14,7 +14,7 @@ def apply(project_id:int ,message :schema_application.ApplicationCreate,db :Sess
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {id} not available")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {project_id} not available")
     
     application = db.query(models.Application).filter(models.Application.project_id == project_id , models.Application.user_id == curr_user.id).first()
     if application :
@@ -46,7 +46,7 @@ def get_applications(project_id:int,db :Session =Depends(get_db),curr_user :int 
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {id} not available")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"project with id {project_id} not available")
     if project.owner_id != curr_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="only owner can access the application")
     
@@ -58,13 +58,12 @@ def update_application(status_value :schema_application.ApplicationUpdate,applic
     application_query = db.query(models.Application).filter(models.Application.id == application_id)
     application = application_query.first()
     if not application :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {id} not found ")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {application_id} not found ")
     
     project = db.query(models.Project).filter(models.Project.id == application.project_id).first()
 
     if project.owner_id != curr_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="only owner can access the application")
-    # Add this before update
     if status_value.status.lower() == "accepted":
         member = db.query(models.ProjectMember).filter(
             models.ProjectMember.project_id == application.project_id,
@@ -90,7 +89,7 @@ def delete_application(application_id:int,db:Session=Depends(get_db),curr_user:i
     application_query = db.query(models.Application).filter(models.Application.id == application_id)
     application = application_query.first()
     if not application :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {id} not found ")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail = f"application with id {application_id} not found ")
     
     project = db.query(models.Project).filter(models.Project.id == application.project_id).first()
 

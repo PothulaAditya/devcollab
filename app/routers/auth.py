@@ -61,7 +61,7 @@ def refresh_access_token(refresh_token:str,db:Session=Depends(get_db)):
 
 
 @router.post("/logout")
-def refresh_access_token(refresh_token:str,db:Session=Depends(get_db)):
+def logout(refresh_token:str,db:Session=Depends(get_db)):
     deleted_count = db.query(models.RefreshToken).filter(
         models.RefreshToken.token == refresh_token
     ).delete(synchronize_session=False)
@@ -75,4 +75,3 @@ def refresh_access_token(refresh_token:str,db:Session=Depends(get_db)):
 
 
 
-### ----- Login ------ ###

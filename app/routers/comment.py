@@ -14,7 +14,7 @@ def create_comment(project_id:int,task_id:int , comment_data :schema_comment.Com
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {id} not found to comment")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project_id} not found to comment")
 
     task= db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task or task.project_id != project_id:
@@ -39,7 +39,7 @@ def get_comment(project_id:int,task_id:int,db:Session=Depends(get_db),curr_user:
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {id} not found to comment")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project_id} not found to comment")
 
     task= db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task or task.project_id != project_id:
@@ -67,7 +67,7 @@ def delete_comment(project_id:int,task_id:int,comment_id:int,db:Session=Depends(
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {id} not found to comment")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project_id} not found to comment")
 
     task= db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task or task.project_id != project_id:

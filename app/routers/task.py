@@ -17,7 +17,7 @@ def create_task(project_id:int,task_data:schema_task.CreateTask,db:Session = Dep
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {id} not found to create task")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project_id} not found to create task")
     
     member = db.query(models.ProjectMember).filter(models.ProjectMember.user_id == curr_user.id,models.ProjectMember.project_id == project_id).first()
 
@@ -61,7 +61,7 @@ def get_tasks(task_id:int ,db:Session = Depends(get_db),curr_user:int=Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"task with id {task_id} not found ")
     project = db.query(models.Project).filter(models.Project.id == task.project_id).first()
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project.id} not found ")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {task.project_id} not found ")
     member = db.query(models.ProjectMember).filter(models.ProjectMember.user_id == curr_user.id,models.ProjectMember.project_id == task.project_id).first()
     if not member and project.owner_id != curr_user.id :
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail = "Not a member of the project")
@@ -79,7 +79,7 @@ def update_tasks(task_id:int,task_data : schema_task.TaskUpdate ,db:Session = De
     
     project = db.query(models.Project).filter(models.Project.id == task.project_id).first()
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project.id} not found ")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {task.project_id} not found ")
     
     member = db.query(models.ProjectMember).filter(models.ProjectMember.user_id == curr_user.id,models.ProjectMember.project_id == task.project_id).first()
     if not member and project.owner_id != curr_user.id :
@@ -108,7 +108,7 @@ def delete_tasks(task_id:int,db:Session = Depends(get_db),curr_user:int=Depends(
     
     project = db.query(models.Project).filter(models.Project.id == task.project_id).first()
     if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {project.id} not found ")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail= f"project with id {task.project_id} not found ")
     
     member = db.query(models.ProjectMember).filter(models.ProjectMember.user_id == curr_user.id,models.ProjectMember.project_id == task.project_id).first()
     if project.owner_id != curr_user.id:
@@ -117,7 +117,7 @@ def delete_tasks(task_id:int,db:Session = Depends(get_db),curr_user:int=Depends(
     
     task_query.delete(synchronize_session=False)
     db.commit()
-
+    
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

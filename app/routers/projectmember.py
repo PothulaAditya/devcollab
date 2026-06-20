@@ -13,7 +13,7 @@ router =APIRouter(prefix="/project",tags=["ProjectMember"])
 def get_projectmembers(project_id:int,db:Session=Depends(get_db),curr_user:int=Depends(get_current_user)):
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not project :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"did not found project with id {id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"did not found project with id {project_id}")
     member = db.query(models.ProjectMember).filter(models.ProjectMember.project_id == project_id,models.ProjectMember.user_id == curr_user.id).first()
     if project.owner_id != curr_user.id and not member:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="only project owner can get details")
@@ -31,7 +31,7 @@ def update_projectmember(role:schema_projectmember.ProjectMemberUpdate,projectme
 
 
     if not projectmember :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"no member with id {id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"no member with id {projectmember_id}")
     
     project = db.query(models.Project).filter(models.Project.id == projectmember.project_id).first()
 
