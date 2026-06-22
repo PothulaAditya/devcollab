@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..utils.utils import hash_password
 from ..Auth.oauth2 import get_current_user,create_verification_token,verify_token,reset_token
 from ..celery_worker import send_email
-from config.config import setting
+from ..config.config import setting
 from ..utils.utils import verify_password
 router = APIRouter(
     prefix="/user"

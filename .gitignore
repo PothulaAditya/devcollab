@@ -4,3 +4,12 @@ __pycache__/
 .env
 .DS_Store
 postgres_data/
+devcollab/
+__pycache__/
+*.pyc
+.env
+devcollab/
+__pycache__/
+.env
+.env
+*.pyc

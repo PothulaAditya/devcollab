@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 from ..models import models
 from ..utils import utils
 from ..Auth.oauth2 import require_admin
-
+from ..schemas.schemas_user import AdminUserResponse
+from typing import List
 router = APIRouter(prefix="/admin",tags = ["Admin"])
 
-@router.get("/users")
+@router.get("/users",response_model=List[AdminUserResponse])
 def admin_get_users(admin = Depends(require_admin),db:Session=Depends(get_db)):
 
     users = db.query(models.User).all()

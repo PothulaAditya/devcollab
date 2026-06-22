@@ -49,6 +49,8 @@ def get_current_user(token :str = Depends(oauth2_scheme),db :Session = Depends(g
     credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail = "invalid credential deatils")
     token = verify_token(token,credential_exception)
     user = db.query(models.User).filter(models.User.id == token.id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not available")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated")
     if user.is_banned:

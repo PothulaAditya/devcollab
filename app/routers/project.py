@@ -63,13 +63,13 @@ def create_project(project : schemas_projects.ProjectCreate,db:Session = Depends
 
 
 @router.put("/{id}",response_model=schemas_projects.ProjectResponse)
-def update_application(id:int,project : schemas_projects.ProjectUpdate,db:Session = Depends(get_db),curr_user : int =Depends(oauth2.get_current_user)):
+def update_project(id:int,project : schemas_projects.ProjectUpdate,db:Session = Depends(get_db),curr_user : int =Depends(oauth2.get_current_user)):
     project_query = db.query(models.Project).filter(models.Project.id == id)
     if not project_query.first() :
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f'project with id {id} not found')
     if project_query.first().owner_id != curr_user.id:
          raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail=f"Not Authorized to perform required operation")
-    project_query.update(project.dict(),synchronize_session=False)
+    project_query.update(project.model_dump(exclude_unset=True),synchronize_session=False)
     db.commit()
 
     redis_client.delete(f"project_id :{id}")
@@ -79,7 +79,7 @@ def update_application(id:int,project : schemas_projects.ProjectUpdate,db:Sessio
 
 
 @router.delete("/{id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id:int,db:Session=Depends(get_db),curr_user:int = Depends(oauth2.get_current_user)):
+def delete_project(id:int,db:Session=Depends(get_db),curr_user:int = Depends(oauth2.get_current_user)):
     project_query=db.query(models.Project).filter(models.Project.id == id)
     project=project_query.first()
     if not project:
