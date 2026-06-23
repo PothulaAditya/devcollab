@@ -14,9 +14,14 @@ class ConnectionManager:
         self.active[project_id].remove(websocket)
 
     async def broadcast(self, message, project_id):
-        self.history[project_id].append(message)
+        dead=[]
         for connection in self.active[project_id]:
-            await connection.send_text(message)
+            try:
+                await connection.send_text(message)
+            except Exception:
+                dead.append(connection)
+        for connection in dead:
+            self.active[project_id].remove(connection)
 
 
 manager = ConnectionManager()
